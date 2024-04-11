@@ -28,6 +28,9 @@ function fib(index) {
 
 sub.subscribe("insert");
 
+
+console.log("Worker started");
+
 process.on("unhandledRejection", (reason, promise) => {
   console.error(reason);
   process.exit(1);

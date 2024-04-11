@@ -1,6 +1,10 @@
 const express = require("express");
 const app = express();
 
+// setup cors
+const cors = require("cors");
+app.use(cors());
+
 // setup redis client
 const redis = require("redis");
 const { REDIS_HOST, REDIS_PORT } = require("./keys");
@@ -22,7 +26,6 @@ const {
   PG_PORT,
 } = require("./keys");
 
-
 const pg_client = new Pool({
   user: PG_USER,
   host: PG_HOST,
@@ -30,6 +33,17 @@ const pg_client = new Pool({
   password: PG_PASSWORD,
   port: PG_PORT,
 });
+
+// connect to redis and postgres
+(async () => {
+  try {
+    await redis_client.connect();
+    await pg_client.connect();
+    console.log("Connected to Redis and Postgres");
+  } catch (e) {
+    console.error(e);
+  }
+})();
 
 pg_client.on("error", () => {
   console.log("Lost PG connection");
@@ -41,20 +55,19 @@ app.get("/", (req, res) => {
   res.send("Hi");
 });
 
-
 app.get("/values/all", async (req, res) => {
-    const values = await pg_client.query("SELECT * from values");
-    res.send(values.rows);
-})
+  const values = await pg_client.query("SELECT * from values");
+  res.send(values.rows);
+});
 
 app.get("/values/current", async (req, res) => {
-    redis_client.hGetAll("values", (err, values) => {
-        res.send(values);
-    });
-})
+  redis_client.hGetAll("values", (err, values) => {
+    res.send(values);
+  });
+});
 
-const server = app.listen(5000, () => {
-  console.log("Listening on port 5000");
+const server = app.listen(8080, () => {
+  console.log("Listening on port 8080");
 });
 
 process.on("uncaughtException", (err) => {
