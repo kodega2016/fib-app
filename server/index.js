@@ -26,6 +26,15 @@ const {
   PG_PORT,
 } = require("./keys");
 
+console.log({
+  PG_USER,
+  PG_HOST,
+  PG_DATABASE,
+  PG_PASSWORD,
+  PG_PORT,
+});
+
+
 const pg_client = new Pool({
   user: PG_USER,
   host: PG_HOST,
@@ -63,6 +72,8 @@ app.get("/values/all", async (req, res) => {
 app.get("/values/current", async (req, res) => {
   redis_client.hGetAll("values", (err, values) => {
     res.send(values);
+  }).catch((e) => {
+    res.status(500).send(e);
   });
 });
 
