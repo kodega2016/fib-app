@@ -17,18 +17,17 @@ const sub = client.duplicate();
   }
 })();
 
-sub.on("message", (_, message) => {
+const listener = (message, channel) => {
+  console.log(`Received message: ${message} from channel: ${channel}`);
   client.hSet("values", message, fib(parseInt(message)));
-});
+};
 
 function fib(index) {
   if (index < 2) return 1;
   return fib(index - 1) + fib(index - 2);
 }
 
-sub.subscribe("insert");
-
-
+sub.subscribe("insert", listener);
 console.log("Worker started");
 
 process.on("unhandledRejection", (reason, promise) => {

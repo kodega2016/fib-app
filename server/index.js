@@ -1,24 +1,20 @@
 const express = require("express");
 const app = express();
 
+// setup error handling for async functions
+require("express-async-errors");
+
 // setup cors
 const cors = require("cors");
 app.use(cors());
 
-// setup redis client
-const redis = require("redis");
-const { REDIS_HOST, REDIS_PORT } = require("./keys");
+// setup body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const redis_client = redis.createClient({
-  socket: {
-    host: REDIS_HOST,
-    port: REDIS_PORT,
-  },
-});
-
-// setup postgres client
-const { Pool } = require("pg");
 const {
+  REDIS_HOST,
+  REDIS_PORT,
   PG_USER,
   PG_HOST,
   PG_DATABASE,
@@ -26,16 +22,17 @@ const {
   PG_PORT,
 } = require("./keys");
 
-console.log({
-  PG_USER,
-  PG_HOST,
-  PG_DATABASE,
-  PG_PASSWORD,
-  PG_PORT,
+const redis = require("redis");
+const redisClient = redis.createClient({
+  socket: {
+    host: REDIS_HOST,
+    port: REDIS_PORT,
+  },
 });
+const redisPublisher = redisClient.duplicate();
 
-
-const pg_client = new Pool({
+const { Pool } = require("pg");
+const pgClient = new Pool({
   user: PG_USER,
   host: PG_HOST,
   database: PG_DATABASE,
@@ -43,47 +40,81 @@ const pg_client = new Pool({
   port: PG_PORT,
 });
 
-// connect to redis and postgres
+// connect the pg client
+pgClient.on("connect", (client) => {
+  client
+    .query("CREATE TABLE IF NOT EXISTS values (number INT)")
+    .catch((err) => console.error(err));
+});
+
+// connet the redis client
 (async () => {
   try {
-    await redis_client.connect();
-    await pg_client.connect();
-    console.log("Connected to Redis and Postgres");
+    await Promise.all([redisClient.connect(), redisPublisher.connect()]);
+    console.log("connected to redis and pg server");
   } catch (e) {
     console.error(e);
+    process.exit(1);
   }
 })();
 
-pg_client.on("error", () => {
-  console.log("Lost PG connection");
-});
-
-pg_client.query("CREATE TABLE IF NOT EXISTS values (number INT)");
-
 app.get("/", (req, res) => {
-  res.send("Hi");
+  res.status(200).json({
+    success: true,
+    message: "Welcome to the homepage!",
+    data: null,
+  });
 });
 
 app.get("/values/all", async (req, res) => {
-  const values = await pg_client.query("SELECT * from values");
-  res.send(values.rows);
+  const values = await pgClient.query("SELECT * from values");
+  res.status(200).json({
+    success: true,
+    message: "Values retrieved successfully",
+    data: values.rows,
+  });
 });
 
 app.get("/values/current", async (req, res) => {
-  redis_client.hGetAll("values", (err, values) => {
-    res.send(values);
-  }).catch((e) => {
-    res.status(500).send(e);
+  const values = await redisClient.hGetAll("values");
+  res.status(200).json({
+    success: true,
+    message: "Values retrieved successfully",
+    data: values,
   });
 });
 
-const server = app.listen(8080, () => {
-  console.log("Listening on port 8080");
+app.post("/values", async (req, res) => {
+  const index = req.body.index;
+  if (parseInt(index) > 40) {
+    return res.status(422).json({
+      success: false,
+      message: "Index too high",
+      data: null,
+    });
+  }
+
+  redisClient.hSet("values", index, "Nothing yet!");
+  redisPublisher.publish("insert", index);
+  pgClient.query("INSERT INTO values(number) VALUES($1)", [index]);
+
+  res.status(201).json({
+    success: true,
+    message: "Index inserted successfully",
+    data: { index },
+  });
 });
 
-process.on("uncaughtException", (err) => {
-  console.error(err);
-  server.close(() => {
-    process.exit(1);
-  });
+// setup error handler
+const errorHandler = require("./middlewares/error_handler");
+app.use(errorHandler);
+
+const PORT = 8080;
+const server = app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+process.on("unhandledRejection", (err, promise) => {
+  console.log(`Logged Error: ${err}`);
+  server.close(() => process.exit(1));
 });
