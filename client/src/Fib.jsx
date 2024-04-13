@@ -53,7 +53,6 @@ export default class Fib extends Component {
   };
 
   render() {
-    console.log("seenIndexes", this.state.seenIndexes);
     return (
       <div className="container my-4">
         <form className="bg-body" onSubmit={this.handleSubmit}>
