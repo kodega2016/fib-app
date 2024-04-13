@@ -14,3 +14,18 @@ jobs:
         run: |
           docker image build ./worker -t kodega2016/fib-worker
           docker push kodega2016/fib-worker
+
+      - name: Build the client image and push to docker hub
+        run: |
+          docker image build ./client -t kodega2016/fib-client
+          docker push kodega2016/fib-client
+
+      - name: Build the server image and push to docker hub
+        run: |
+          docker image build ./server -t kodega2016/fib-server
+          docker push kodega2016/fib-server
+
+      - name: Build the nginx image and push to docker hub
+        run: |
+          docker image build ./nginx -t kodega2016/fib-nginx
+          docker push kodega2016/fib-nginx
