@@ -17,7 +17,7 @@ export default class Fib extends Component {
   fetchValues = async () => {
     try {
       const { data } = await axios.get("/api/values/current");
-      this.setState({ values: data });
+      this.setState({ values: data.data });
     } catch (error) {
       console.log(error);
       toast.error("Failed to fetch values");
@@ -27,7 +27,7 @@ export default class Fib extends Component {
   fetchIndexes = async () => {
     try {
       const { data } = await axios.get("/api/values/all");
-      this.setState({ seenIndexes: data });
+      this.setState({ seenIndexes: data.data });
     } catch (error) {
       console.log(error);
       toast.error("Failed to fetch values");
@@ -53,6 +53,7 @@ export default class Fib extends Component {
   };
 
   render() {
+    console.log("seenIndexes", this.state.seenIndexes);
     return (
       <div className="container my-4">
         <form className="bg-body" onSubmit={this.handleSubmit}>
@@ -79,9 +80,9 @@ export default class Fib extends Component {
         <h3>Indexes I have seen:</h3>
         {this.state.seenIndexes.map(({ number }) => number).join(", ")}
         <h3>Calculated Values:</h3>
-        {Object.keys(this.state.values).map((key) => (
+        {Object.entries(this.state.values).map(([key, value]) => (
           <div key={key}>
-            For index {key} I calculated {this.state.values[key]}
+            For index {key} I calculated {value}
           </div>
         ))}
       </div>
