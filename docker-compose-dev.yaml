@@ -41,6 +41,8 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
+    environment:
+      - WDS_SOCKET_PORT=0
   nginx:
     build:
       context: ./nginx
