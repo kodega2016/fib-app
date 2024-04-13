@@ -13,4 +13,4 @@ jobs:
       - name: Build client dev image
         run: docker image build . -t kodega2016/react-app-dev -f ./client/Dockerfile.dev
       - name: run client tests
-        run: docker container run -e CI=true --rm kodega2016/react-app-dev npm run test -- --coverage
+        run: docker container run -e CI=true --rm kodega2016/react-app-dev npm run test a -- --coverage
