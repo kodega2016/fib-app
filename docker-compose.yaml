@@ -1,14 +1,14 @@
 version: "3"
 services:
   worker:
-    image: kodega2016/fib-worker
+    image: rallycoding/multi-worker
     mem_limit: 128m
     hostname: worker
     environment:
       - REDIS_HOST=$REDIS_HOST
       - REDIS_PORT=$REDIS_PORT
   api:
-    image: kodega2016/fib-api
+    image: rallycoding/multi-server
     hostname: api
     mem_limit: 128m
     environment:
@@ -20,13 +20,13 @@ services:
       - PG_PORT=$PG_PORT
       - PG_HOST=$PG_HOST
   client:
-    image: kodega2016/fib-client
+    image: rallycoding/multi-client
     hostname: client
     mem_limit: 128m
     depends_on:
       - api
   nginx:
-    image: kodega2016/fib-nginx
+    image: rallycoding/multi-nginx
     hostname: nginx
     mem_limit: 128m
     ports:
