@@ -19,9 +19,6 @@ services:
       - PG_DATABASE=$PG_DATABASE
       - PG_PORT=$PG_PORT
       - PG_HOST=$PG_HOST
-    depends_on:
-      - redis
-      - postgres
   client:
     image: kodega2016/fib-client
     hostname: client
@@ -34,6 +31,5 @@ services:
     mem_limit: 128m
     ports:
       - "80:80"
-    depends_on:
       - api
       - client
